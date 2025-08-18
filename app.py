@@ -14,7 +14,6 @@ from plotly.subplots import make_subplots
 import plotly.express as px
 from datetime import datetime, timedelta
 import os
-from dotenv import load_dotenv
 
 # Import IntelliVest functions
 from analysis_engine import (
@@ -22,9 +21,6 @@ from analysis_engine import (
     get_technical_score, 
     get_final_recommendation
 )
-
-# Load environment variables
-load_dotenv()
 
 # Page configuration
 st.set_page_config(
@@ -77,11 +73,11 @@ def get_database_connection():
     """
     try:
         connection = psycopg2.connect(
-            host=os.getenv('DB_HOST', 'localhost'),
-            database=os.getenv('DB_NAME', 'intellivest'),
-            user=os.getenv('DB_USER', 'postgres'),
-            password=os.getenv('DB_PASS', ''),
-            port=os.getenv('DB_PORT', '5432')
+            host=st.secrets["DB_HOST"],
+            database=st.secrets["DB_NAME"],
+            user=st.secrets["DB_USER"],
+            password=st.secrets["DB_PASS"],
+            port=st.secrets["DB_PORT"]
         )
         return connection
     except Exception as e:
