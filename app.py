@@ -11,7 +11,7 @@ import pandas as pd
 import psycopg2
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-import plotly.express as px
+
 from datetime import datetime, timedelta
 
 # Import IntelliVest functions
@@ -23,7 +23,7 @@ from analysis_engine import (
 
 # Import ML forecasting
 try:
-    from ml_forecaster import forecast_stock_price, StockForecaster
+    from ml_forecaster import forecast_stock_price
     ML_AVAILABLE = True
 except ImportError:
     ML_AVAILABLE = False

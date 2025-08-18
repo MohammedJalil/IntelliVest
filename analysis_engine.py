@@ -10,7 +10,7 @@ This module contains the core logic for analyzing stock data, including:
 
 import pandas as pd
 import ta
-from typing import Dict, Any, Tuple
+from typing import Dict, Any
 import logging
 
 # Configure logging
@@ -137,33 +137,40 @@ def get_technical_score(latest_indicators: pd.Series) -> int:
         
         # RSI Analysis (30 points max)
         rsi = latest_indicators['RSI_14']
-        if pd.notna(rsi):  # Check if RSI is not NaN
-            if rsi < 30:
+        if pd.notna(rsi) and not pd.isna(rsi):  # Check if RSI is not NaN
+            rsi_val = float(rsi)
+            if rsi_val < 30:
                 score += 30  # Oversold condition - bullish signal
-            elif rsi > 70:
+            elif rsi_val > 70:
                 score -= 10  # Overbought condition - bearish signal
         
         # Moving Average Analysis (30 points max)
         sma_50 = latest_indicators['SMA_50']
         sma_200 = latest_indicators['SMA_200']
         
-        if pd.notna(sma_50) and pd.notna(sma_200):
-            if sma_50 > sma_200:
+        if pd.notna(sma_50) and pd.notna(sma_200) and not pd.isna(sma_50) and not pd.isna(sma_200):
+            sma_50_val = float(sma_50)
+            sma_200_val = float(sma_200)
+            if sma_50_val > sma_200_val:
                 score += 30  # Golden cross - bullish signal
         
         # MACD Analysis (20 points max)
         macd_line = latest_indicators['MACD_12_26_9']
         macd_signal = latest_indicators['MACDs_12_26_9']
         
-        if pd.notna(macd_line) and pd.notna(macd_signal):
-            if macd_line > macd_signal:
+        if pd.notna(macd_line) and pd.notna(macd_signal) and not pd.isna(macd_line) and not pd.isna(macd_signal):
+            macd_val = float(macd_line)
+            macd_signal_val = float(macd_signal)
+            if macd_val > macd_signal_val:
                 score += 20  # MACD above signal line - bullish momentum
         
         # Price vs Long-term MA Analysis (20 points max)
         close_price = latest_indicators['close']
         
-        if pd.notna(close_price) and pd.notna(sma_200):
-            if close_price > sma_200:
+        if pd.notna(close_price) and pd.notna(sma_200) and not pd.isna(close_price) and not pd.isna(sma_200):
+            close_val = float(close_price)
+            sma_200_val = float(sma_200)
+            if close_val > sma_200_val:
                 score += 20  # Price above 200-day MA - bullish trend
         
         # Ensure score is within bounds

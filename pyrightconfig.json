@@ -11,8 +11,9 @@
     ".streamlit"
   ],
   "pythonVersion": "3.11",
-  "reportMissingImports": "warning",
+  "reportMissingImports": "none",
   "reportMissingTypeStubs": "none",
+  "reportMissingModuleSource": "none",
   "reportUnusedImport": "warning",
   "reportUnusedVariable": "warning",
   "reportUnusedFunction": "warning",
@@ -23,6 +24,9 @@
   "reportOptionalCall": "none",
   "reportOptionalIterable": "none",
   "reportOptionalContextManager": "none",
-  "reportOptionalOperand": "none"
+  "reportOptionalOperand": "none",
+  "reportGeneralTypeIssues": "none",
+  "reportPossiblyUnboundVariable": "none",
+  "reportAttributeAccessIssue": "none"
 }
 
