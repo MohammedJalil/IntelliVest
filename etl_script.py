@@ -43,10 +43,11 @@ def get_database_connection() -> psycopg2.extensions.connection:
     """
     try:
         connection = psycopg2.connect(
-            host=os.getenv('DB_HOST'),
-            database=os.getenv('DB_NAME'),
-            user=os.getenv('DB_USER'),
-            password=os.getenv('DB_PASS')
+            host=os.getenv('DB_HOST', 'db.yejdhlozdggblspyrure.supabase.co'),
+            database=os.getenv('DB_NAME', 'postgres'),
+            user=os.getenv('DB_USER', 'postgres'),
+            password=os.getenv('DB_PASS', ''),
+            port=os.getenv('DB_PORT', '5432')
         )
         logger.info("Database connection established successfully")
         return connection
