@@ -124,10 +124,10 @@ with tab2:
     # Generate sample data for demonstration
     import numpy as np
     dates = pd.date_range('2023-01-01', periods=100, freq='D')
-    prices = 100 + np.cumsum(np.random.randn(100) * 0.5)
+    prices = pd.Series(100 + np.cumsum(np.random.randn(100) * 0.5), index=dates)
     
     # Calculate sample indicators
-    rsi = 50 + 20 * np.sin(np.arange(100) * 0.1)
+    rsi = pd.Series(50 + 20 * np.sin(np.arange(100) * 0.1), index=dates)
     sma_50 = prices.rolling(50).mean()
     sma_200 = prices.rolling(200).mean()
     
@@ -140,20 +140,20 @@ with tab2:
     )
     
     fig.add_trace(
-        go.Scatter(x=dates, y=prices, name='Price', line=dict(color='blue')),
+        go.Scatter(x=prices.index, y=prices.values, name='Price', line=dict(color='blue')),
         row=1, col=1
     )
     fig.add_trace(
-        go.Scatter(x=dates, y=sma_50, name='SMA 50', line=dict(color='orange')),
+        go.Scatter(x=sma_50.index, y=sma_50.values, name='SMA 50', line=dict(color='orange')),
         row=1, col=1
     )
     fig.add_trace(
-        go.Scatter(x=dates, y=sma_200, name='SMA 200', line=dict(color='red')),
+        go.Scatter(x=sma_200.index, y=sma_200.values, name='SMA 200', line=dict(color='red')),
         row=1, col=1
     )
     
     fig.add_trace(
-        go.Scatter(x=dates, y=rsi, name='RSI', line=dict(color='purple')),
+        go.Scatter(x=rsi.index, y=rsi.values, name='RSI', line=dict(color='purple')),
         row=2, col=1
     )
     fig.add_hline(y=70, line_dash="dash", line_color="red", row=2, col=1)

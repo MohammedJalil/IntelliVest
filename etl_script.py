@@ -18,10 +18,6 @@ import psycopg2
 from psycopg2.extras import execute_values
 import requests
 from bs4 import BeautifulSoup
-from dotenv import load_dotenv
-
-# Load environment variables
-load_dotenv()
 
 # Configure logging
 logging.basicConfig(
@@ -46,12 +42,19 @@ def get_database_connection() -> psycopg2.extensions.connection:
         if os.getenv('DATABASE_URL'):
             connection = psycopg2.connect(os.getenv('DATABASE_URL'))
         else:
+            # Ensure all database credentials are provided via environment variables
+            required_env_vars = ['DB_HOST', 'DB_NAME', 'DB_USER', 'DB_PASS', 'DB_PORT']
+            missing_vars = [var for var in required_env_vars if not os.getenv(var)]
+            
+            if missing_vars:
+                raise ValueError(f"Missing required environment variables: {missing_vars}")
+            
             connection = psycopg2.connect(
-                host=os.getenv('DB_HOST', 'aws-1-us-east-2.pooler.supabase.com'),
-                database=os.getenv('DB_NAME', 'postgres'),
-                user=os.getenv('DB_USER', 'postgres.yejdhlozdggblspyrure'),
-                password=os.getenv('DB_PASS', 'Livescan1!'),
-                port=os.getenv('DB_PORT', '6543')
+                host=os.getenv('DB_HOST'),
+                database=os.getenv('DB_NAME'),
+                user=os.getenv('DB_USER'),
+                password=os.getenv('DB_PASS'),
+                port=int(os.getenv('DB_PORT'))
             )
         logger.info("Database connection established successfully")
         return connection

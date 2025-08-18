@@ -84,20 +84,46 @@ def get_database_connection():
         psycopg2.extensions.connection: Database connection object
     """
     try:
-        # Try connection string first, fall back to individual parameters
-        if "DATABASE_URL" in st.secrets:
-            connection = psycopg2.connect(st.secrets["DATABASE_URL"])
+        # Try Streamlit secrets first (for Streamlit Cloud deployment)
+        if hasattr(st, 'secrets') and st.secrets:
+            if "DATABASE_URL" in st.secrets:
+                connection = psycopg2.connect(st.secrets["DATABASE_URL"])
+            else:
+                connection = psycopg2.connect(
+                    host=st.secrets["DB_HOST"],
+                    database=st.secrets["DB_NAME"],
+                    user=st.secrets["DB_USER"],
+                    password=st.secrets["DB_PASS"],
+                    port=st.secrets["DB_PORT"]
+                )
         else:
-            connection = psycopg2.connect(
-                host=st.secrets["DB_HOST"],
-                database=st.secrets["DB_NAME"],
-                user=st.secrets["DB_USER"],
-                password=st.secrets["DB_PASS"],
-                port=st.secrets["DB_PORT"]
-            )
+            # Fall back to environment variables (for local development)
+            import os
+            
+            if os.getenv('DATABASE_URL'):
+                connection = psycopg2.connect(os.getenv('DATABASE_URL'))
+            else:
+                # Check if all required environment variables are present
+                required_vars = ['DB_HOST', 'DB_NAME', 'DB_USER', 'DB_PASS', 'DB_PORT']
+                missing_vars = [var for var in required_vars if not os.getenv(var)]
+                
+                if missing_vars:
+                    st.error(f"Missing required environment variables: {missing_vars}")
+                    st.info("Please create a .env file with your database credentials or set the environment variables.")
+                    return None
+                
+                connection = psycopg2.connect(
+                    host=os.getenv('DB_HOST'),
+                    database=os.getenv('DB_NAME'),
+                    user=os.getenv('DB_USER'),
+                    password=os.getenv('DB_PASS'),
+                    port=int(os.getenv('DB_PORT', '5432'))
+                )
+        
         return connection
     except Exception as e:
         st.error(f"Database connection failed: {e}")
+        st.info("Please check your database credentials and ensure the database is running.")
         return None
 
 def fetch_stock_data(ticker: str, days: int = 365) -> pd.DataFrame:
@@ -130,7 +156,7 @@ def fetch_stock_data(ticker: str, days: int = 365) -> pd.DataFrame:
         df = pd.read_sql_query(
             query, 
             connection, 
-            params=(ticker.upper(), start_date, end_date)
+            params=[ticker.upper(), start_date, end_date]
         )
         
         connection.close()
@@ -385,7 +411,7 @@ def main():
     st.markdown('<h1 class="main-header">📈 IntelliVest Stock Analyzer</h1>', unsafe_allow_html=True)
     
     # Sidebar
-    st.sidebar.header("Stock Analysis")
+    st.sidebar.header("🚀 Stock Analysis")
     
     # Ticker input
     ticker = st.sidebar.text_input(
@@ -396,12 +422,18 @@ def main():
     ).upper().strip()
     
     # Analysis button
-    analyze_button = st.sidebar.button("🚀 Analyze Stock", type="primary")
+    analyze_button = st.sidebar.button("🔍 Analyze Stock", type="primary")
     
     # Additional options
     st.sidebar.markdown("---")
-    st.sidebar.markdown("**Analysis Period:**")
+    st.sidebar.markdown("**📅 Analysis Period:**")
     days = st.sidebar.slider("Days of Data:", min_value=30, max_value=1095, value=365, step=30)
+    
+    # Store in session state to prevent page refresh issues
+    if 'current_ticker' not in st.session_state:
+        st.session_state.current_ticker = ticker
+    if 'current_days' not in st.session_state:
+        st.session_state.current_days = days
     
     # Main content area
     if analyze_button and ticker:
@@ -472,6 +504,12 @@ def main():
                     st.subheader("🔮 Machine Learning Price Forecast")
                     
                     if ML_AVAILABLE:
+                        # Store forecast state to prevent page refresh
+                        if 'forecast_generated' not in st.session_state:
+                            st.session_state.forecast_generated = False
+                        if 'forecast_data' not in st.session_state:
+                            st.session_state.forecast_data = None
+                        
                         # Forecast options
                         col1, col2 = st.columns(2)
                         with col1:
@@ -491,7 +529,8 @@ def main():
                             )
                         
                         # Generate forecast button
-                        if st.button("🚀 Generate Forecast", type="primary"):
+                        if st.button("🚀 Generate Forecast", type="primary", key="generate_forecast"):
+                            st.session_state.forecast_generated = True
                             with st.spinner("Training ML model and generating forecast..."):
                                 try:
                                     # Generate forecast
@@ -502,43 +541,63 @@ def main():
                                         confidence_interval=confidence_level
                                     )
                                     
-                                    # Display forecast chart
-                                    st.plotly_chart(forecast_chart, use_container_width=True)
+                                    # Store forecast data in session state
+                                    st.session_state.forecast_data = {
+                                        'forecaster': forecaster,
+                                        'forecast_chart': forecast_chart,
+                                        'ticker': ticker
+                                    }
                                     
-                                    # Display forecast summary
-                                    st.subheader("📊 Forecast Summary")
-                                    summary = forecaster.get_forecast_summary()
-                                    
-                                    col1, col2, col3 = st.columns(3)
-                                    with col1:
-                                        st.metric("Trend Direction", summary['trend_direction'])
-                                    with col2:
-                                        st.metric("Volatility", summary['volatility_estimate'])
-                                    with col3:
-                                        st.metric("Confidence", summary['confidence_interval'])
-                                    
-                                    # Show next 7 days predictions
-                                    st.subheader("📅 Next 7 Days Predictions")
-                                    predictions_df = pd.DataFrame({
-                                        'Date': summary['next_7_days']['dates'],
-                                        'Predicted Price': summary['next_7_days']['predictions'],
-                                        'Lower Bound': summary['next_7_days']['lower_bound'],
-                                        'Upper Bound': summary['next_7_days']['upper_bound']
-                                    })
-                                    st.dataframe(predictions_df, use_container_width=True)
-                                    
-                                    # Model insights
-                                    with st.expander("🔍 Model Insights"):
-                                        insights = forecaster.get_model_insights()
-                                        st.write(f"**Trend Strength:** {insights.get('trend_strength', 'N/A')}")
-                                        st.write(f"**Seasonality Detected:** {insights.get('seasonality_detected', 'N/A')}")
-                                        st.write(f"**Changepoints:** {insights.get('changepoints', 'N/A')}")
-                                        
-                                        st.info("💡 **About the Model:** This forecast uses Facebook Prophet, a powerful time-series forecasting model that automatically detects trends, seasonality, and changepoints in your data.")
+                                    st.success("✅ Forecast generated successfully!")
                                     
                                 except Exception as e:
                                     st.error(f"Forecast generation failed: {e}")
                                     st.info("This might be due to insufficient data or model training issues.")
+                                    st.session_state.forecast_generated = False
+                        
+                        # Display forecast results if available
+                        if st.session_state.forecast_generated and st.session_state.forecast_data:
+                            forecast_data = st.session_state.forecast_data
+                            
+                            # Display forecast chart
+                            st.plotly_chart(forecast_data['forecast_chart'], use_container_width=True)
+                            
+                            # Display forecast summary
+                            st.subheader("📊 Forecast Summary")
+                            summary = forecast_data['forecaster'].get_forecast_summary()
+                            
+                            col1, col2, col3 = st.columns(3)
+                            with col1:
+                                st.metric("Trend Direction", summary['trend_direction'])
+                            with col2:
+                                st.metric("Volatility", summary['volatility_estimate'])
+                            with col3:
+                                st.metric("Confidence", summary['confidence_interval'])
+                            
+                            # Show next 7 days predictions
+                            st.subheader("📅 Next 7 Days Predictions")
+                            predictions_df = pd.DataFrame({
+                                'Date': summary['next_7_days']['dates'],
+                                'Predicted Price': summary['next_7_days']['predictions'],
+                                'Lower Bound': summary['next_7_days']['lower_bound'],
+                                'Upper Bound': summary['next_7_days']['upper_bound']
+                            })
+                            st.dataframe(predictions_df, use_container_width=True)
+                            
+                            # Model insights
+                            with st.expander("🔍 Model Insights"):
+                                insights = forecast_data['forecaster'].get_model_insights()
+                                st.write(f"**Trend Strength:** {insights.get('trend_strength', 'N/A')}")
+                                st.write(f"**Seasonality Detected:** {insights.get('seasonality_detected', 'N/A')}")
+                                st.write(f"**Changepoints:** {insights.get('changepoints', 'N/A')}")
+                                
+                                st.info("💡 **About the Model:** This forecast uses Facebook Prophet, a powerful time-series forecasting model that automatically detects trends, seasonality, and changepoints in your data.")
+                            
+                            # Clear forecast button
+                            if st.button("🗑️ Clear Forecast", key="clear_forecast"):
+                                st.session_state.forecast_generated = False
+                                st.session_state.forecast_data = None
+                                st.rerun()
                     else:
                         st.error("ML forecasting is not available. Please install Prophet library.")
                         st.code("pip install prophet")

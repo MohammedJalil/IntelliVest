@@ -96,14 +96,12 @@ IntelliVest/
 ├── 📈 analysis_engine.py        # Technical analysis & scoring engine
 ├── 🔄 etl_script.py            # Automated data pipeline
 ├── 📊 backtester.py            # Strategy backtesting engine
-├── ⚙️ main.py                  # CLI interface
-├── 🔧 config.py                # Configuration management
 ├── 📋 requirements.txt          # Python dependencies
 ├── 🗄️ .streamlit/              # Streamlit configuration
 │   └── secrets.toml            # Database credentials (secure)
 ├── 🔄 .github/workflows/       # GitHub Actions automation
 │   └── etl_pipeline.yml        # Daily ETL automation
-├── 📚 env_example.txt          # Environment template
+├── 🧪 test_app.py              # Simple test suite
 └── 📖 README.md                # Project documentation
 ```
 
@@ -141,14 +139,15 @@ IntelliVest/
 
 4. **Configure environment variables**
    ```bash
-   # Copy the example environment file
-   cp env_example.txt .env
+   # Create .env file with your database credentials
+   DATABASE_URL=postgresql://username:password@host:port/database
    
-   # Edit .env with your database credentials
+   # Or use individual parameters
    DB_HOST=localhost
    DB_NAME=intellivest
    DB_USER=your_username
    DB_PASS=your_password
+   DB_PORT=5432
    ```
 
 5. **Set up PostgreSQL database**
