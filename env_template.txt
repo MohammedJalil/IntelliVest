@@ -1,4 +1,4 @@
-# IntelliVest Environment Configuration
+# IntelliVest Environment Configuration Template
 # Copy this file to .env and fill in your actual database credentials
 
 # Database Configuration - Using Supabase Connection Pooler
@@ -12,4 +12,4 @@ DB_PASS=Livescan1!
 DB_PORT=6543
 
 # Optional: Logging Level (DEBUG, INFO, WARNING, ERROR)
-# LOG_LEVEL=INFO
+LOG_LEVEL=INFO

@@ -42,13 +42,17 @@ def get_database_connection() -> psycopg2.extensions.connection:
         psycopg2.Error: If connection fails
     """
     try:
-        connection = psycopg2.connect(
-            host=os.getenv('DB_HOST', 'db.yejdhlozdggblspyrure.supabase.co'),
-            database=os.getenv('DB_NAME', 'postgres'),
-            user=os.getenv('DB_USER', 'postgres'),
-            password=os.getenv('DB_PASS', ''),
-            port=os.getenv('DB_PORT', '5432')
-        )
+        # Try connection string first, fall back to individual parameters
+        if os.getenv('DATABASE_URL'):
+            connection = psycopg2.connect(os.getenv('DATABASE_URL'))
+        else:
+            connection = psycopg2.connect(
+                host=os.getenv('DB_HOST', 'aws-1-us-east-2.pooler.supabase.com'),
+                database=os.getenv('DB_NAME', 'postgres'),
+                user=os.getenv('DB_USER', 'postgres.yejdhlozdggblspyrure'),
+                password=os.getenv('DB_PASS', 'Livescan1!'),
+                port=os.getenv('DB_PORT', '6543')
+            )
         logger.info("Database connection established successfully")
         return connection
     except psycopg2.Error as e:
