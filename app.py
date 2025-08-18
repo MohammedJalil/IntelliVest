@@ -21,6 +21,14 @@ from analysis_engine import (
     get_final_recommendation
 )
 
+# Import ML forecasting
+try:
+    from ml_forecaster import forecast_stock_price, StockForecaster
+    ML_AVAILABLE = True
+except ImportError:
+    ML_AVAILABLE = False
+    st.warning("⚠️ ML forecasting not available. Install Prophet: `pip install prophet`")
+
 # Page configuration
 st.set_page_config(
     page_title="IntelliVest Stock Analyzer",
@@ -28,6 +36,11 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
+
+# Add navigation info
+st.sidebar.markdown("---")
+st.sidebar.markdown("**📚 Learn More:**")
+st.sidebar.markdown("Check out the **Methodology** page to understand how our analysis works!")
 
 # Custom CSS for better styling
 st.markdown("""
@@ -440,7 +453,8 @@ def main():
                 display_recommendation(recommendation, technical_score)
                 
                 # Create tabs for different views
-                tab1, tab2, tab3, tab4 = st.tabs(["📊 Price Chart", "📈 Technical Indicators", "📋 Data Table", "ℹ️ Analysis Summary"])
+                tab_names = ["📊 Price Chart", "📈 Technical Indicators", "🔮 ML Forecast", "📋 Data Table", "ℹ️ Analysis Summary"]
+                tab1, tab2, tab3, tab4, tab5 = st.tabs(tab_names)
                 
                 with tab1:
                     st.subheader("Price Chart with Moving Averages")
@@ -455,6 +469,81 @@ def main():
                         st.plotly_chart(indicators_fig, use_container_width=True)
                 
                 with tab3:
+                    st.subheader("🔮 Machine Learning Price Forecast")
+                    
+                    if ML_AVAILABLE:
+                        # Forecast options
+                        col1, col2 = st.columns(2)
+                        with col1:
+                            forecast_days = st.selectbox(
+                                "Forecast Period:",
+                                options=[7, 14, 30, 60],
+                                index=2,
+                                help="Number of days to forecast into the future"
+                            )
+                        
+                        with col2:
+                            confidence_level = st.selectbox(
+                                "Confidence Level:",
+                                options=[0.90, 0.95, 0.99],
+                                index=1,
+                                help="Confidence interval for predictions"
+                            )
+                        
+                        # Generate forecast button
+                        if st.button("🚀 Generate Forecast", type="primary"):
+                            with st.spinner("Training ML model and generating forecast..."):
+                                try:
+                                    # Generate forecast
+                                    forecaster, forecast_chart = forecast_stock_price(
+                                        df_with_indicators, 
+                                        ticker, 
+                                        forecast_days=forecast_days,
+                                        confidence_interval=confidence_level
+                                    )
+                                    
+                                    # Display forecast chart
+                                    st.plotly_chart(forecast_chart, use_container_width=True)
+                                    
+                                    # Display forecast summary
+                                    st.subheader("📊 Forecast Summary")
+                                    summary = forecaster.get_forecast_summary()
+                                    
+                                    col1, col2, col3 = st.columns(3)
+                                    with col1:
+                                        st.metric("Trend Direction", summary['trend_direction'])
+                                    with col2:
+                                        st.metric("Volatility", summary['volatility_estimate'])
+                                    with col3:
+                                        st.metric("Confidence", summary['confidence_interval'])
+                                    
+                                    # Show next 7 days predictions
+                                    st.subheader("📅 Next 7 Days Predictions")
+                                    predictions_df = pd.DataFrame({
+                                        'Date': summary['next_7_days']['dates'],
+                                        'Predicted Price': summary['next_7_days']['predictions'],
+                                        'Lower Bound': summary['next_7_days']['lower_bound'],
+                                        'Upper Bound': summary['next_7_days']['upper_bound']
+                                    })
+                                    st.dataframe(predictions_df, use_container_width=True)
+                                    
+                                    # Model insights
+                                    with st.expander("🔍 Model Insights"):
+                                        insights = forecaster.get_model_insights()
+                                        st.write(f"**Trend Strength:** {insights.get('trend_strength', 'N/A')}")
+                                        st.write(f"**Seasonality Detected:** {insights.get('seasonality_detected', 'N/A')}")
+                                        st.write(f"**Changepoints:** {insights.get('changepoints', 'N/A')}")
+                                        
+                                        st.info("💡 **About the Model:** This forecast uses Facebook Prophet, a powerful time-series forecasting model that automatically detects trends, seasonality, and changepoints in your data.")
+                                    
+                                except Exception as e:
+                                    st.error(f"Forecast generation failed: {e}")
+                                    st.info("This might be due to insufficient data or model training issues.")
+                    else:
+                        st.error("ML forecasting is not available. Please install Prophet library.")
+                        st.code("pip install prophet")
+                
+                with tab4:
                     st.subheader("Recent Data")
                     # Show last 10 rows of data
                     display_df = df_with_indicators[['date', 'close', 'RSI_14', 'SMA_50', 'SMA_200', 'MACD_12_26_9']].tail(10)
@@ -462,7 +551,7 @@ def main():
                     display_df = display_df.round(2)
                     st.dataframe(display_df, use_container_width=True)
                 
-                with tab4:
+                with tab5:
                     st.subheader("Analysis Summary")
                     
                     col1, col2 = st.columns(2)

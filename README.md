@@ -1,8 +1,46 @@
-# IntelliVest - Intelligent Stock Analysis and Recommendation System
+# 🚀 IntelliVest - Intelligent Stock Analysis & ML Forecasting Platform
 
-IntelliVest is a comprehensive stock analysis platform featuring a Python backend for technical analysis and a beautiful Streamlit web interface. The system combines data engineering, technical analysis, and quantitative backtesting to provide data-driven investment insights through an intuitive web application.
+<div align="center">
+
+![IntelliVest Logo](https://img.shields.io/badge/IntelliVest-📈-blue?style=for-the-badge&logo=python)
+
+**Professional Stock Analysis Platform with Machine Learning Price Forecasting**
+
+[![Live Demo](https://img.shields.io/badge/Live_Demo-🌐-green?style=for-the-badge)](https://your-streamlit-app-url.streamlit.app)
+[![Python](https://img.shields.io/badge/Python-3.11+-blue?style=for-the-badge&logo=python)](https://python.org)
+[![Streamlit](https://img.shields.io/badge/Streamlit-1.28+-red?style=for-the-badge&logo=streamlit)](https://streamlit.io)
+[![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
+
+</div>
+
+---
+
+## 🎯 **What is IntelliVest?**
+
+IntelliVest is a **production-ready, enterprise-grade stock analysis platform** that combines traditional technical analysis with cutting-edge machine learning to provide intelligent investment insights. Built with modern data engineering practices, it features automated ETL pipelines, real-time analysis, and predictive forecasting.
+
+### 🌟 **Key Features**
+- **🤖 ML-Powered Forecasting**: Facebook Prophet time-series predictions with confidence intervals
+- **📊 Professional Technical Analysis**: RSI, MACD, Moving Averages, Volume analysis
+- **🚀 Automated Data Pipeline**: GitHub Actions ETL with daily updates
+- **🌐 Beautiful Web Interface**: Multi-page Streamlit dashboard with methodology
+- **🗄️ Cloud-Native Architecture**: Supabase PostgreSQL with connection pooling
+- **📱 Mobile-First Design**: Responsive design for all devices
+- **🔬 Educational Content**: Detailed methodology and technical explanations
 
 ## 🚀 Features
+
+## 🌐 **Live Demo**
+
+<div align="center">
+
+**[🚀 Try IntelliVest Live!](https://your-streamlit-app-url.streamlit.app)**
+
+*Experience professional stock analysis with ML forecasting in your browser*
+
+</div>
+
+---
 
 ## 🚀 Quick Start
 
@@ -19,21 +57,54 @@ If you want to run the app locally or modify it:
 - **🗄️ Cloud Database**: Supabase PostgreSQL with connection pooling for reliability
 - **📱 Responsive Design**: Works perfectly on desktop, tablet, and mobile devices
 
+## 🛠️ **Tech Stack**
+
+<div align="center">
+
+### **Backend & Data Processing**
+![Python](https://img.shields.io/badge/Python-3.11+-blue?style=for-the-badge&logo=python)
+![Pandas](https://img.shields.io/badge/Pandas-2.0+-blue?style=for-the-badge&logo=pandas)
+![NumPy](https://img.shields.io/badge/NumPy-1.24+-blue?style=for-the-badge&logo=numpy)
+![Prophet](https://img.shields.io/badge/Prophet-1.1+-orange?style=for-the-badge)
+
+### **Web Framework & Visualization**
+![Streamlit](https://img.shields.io/badge/Streamlit-1.28+-red?style=for-the-badge&logo=streamlit)
+![Plotly](https://img.shields.io/badge/Plotly-5.17+-blue?style=for-the-badge&logo=plotly)
+![Matplotlib](https://img.shields.io/badge/Matplotlib-3.7+-blue?style=for-the-badge)
+
+### **Database & Infrastructure**
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-13+-blue?style=for-the-badge&logo=postgresql)
+![Supabase](https://img.shields.io/badge/Supabase-Cloud-orange?style=for-the-badge&logo=supabase)
+![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-Automation-black?style=for-the-badge&logo=github)
+
+### **Financial Data & APIs**
+![Yahoo Finance](https://img.shields.io/badge/Yahoo_Finance-API-green?style=for-the-badge)
+![Technical Analysis](https://img.shields.io/badge/Technical_Analysis-TA_Lib-blue?style=for-the-badge)
+
+</div>
+
+---
+
 ## 📁 Project Structure
 
 ```
 IntelliVest/
-├── app.py                   # 🚀 Main Streamlit web application
-├── requirements.txt          # Python dependencies
-├── .streamlit/              # Streamlit configuration
-│   └── secrets.toml         # Database credentials (not in git)
-├── env_example.txt          # Environment variables template
-├── etl_script.py            # Data extraction, transformation, and loading
-├── analysis_engine.py       # Technical analysis and scoring engine
-├── backtester.py            # Strategy backtesting and performance evaluation
-├── main.py                  # Command-line interface
-├── config.py                # Configuration management
-└── README.md                # Project documentation
+├── 🚀 app.py                    # Main Streamlit web application
+├── 📊 pages/                    # Multi-page app structure
+│   └── 1_Methodology.py        # Technical methodology & explanations
+├── 🤖 ml_forecaster.py         # ML forecasting with Prophet
+├── 📈 analysis_engine.py        # Technical analysis & scoring engine
+├── 🔄 etl_script.py            # Automated data pipeline
+├── 📊 backtester.py            # Strategy backtesting engine
+├── ⚙️ main.py                  # CLI interface
+├── 🔧 config.py                # Configuration management
+├── 📋 requirements.txt          # Python dependencies
+├── 🗄️ .streamlit/              # Streamlit configuration
+│   └── secrets.toml            # Database credentials (secure)
+├── 🔄 .github/workflows/       # GitHub Actions automation
+│   └── etl_pipeline.yml        # Daily ETL automation
+├── 📚 env_example.txt          # Environment template
+└── 📖 README.md                # Project documentation
 ```
 
 ## 🛠️ Installation
