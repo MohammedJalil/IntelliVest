@@ -1,25 +1,38 @@
 # IntelliVest - Intelligent Stock Analysis and Recommendation System
 
-IntelliVest is a comprehensive Python backend system for stock analysis, technical indicator calculation, and trading strategy backtesting. The system combines data engineering, technical analysis, and quantitative backtesting to provide data-driven investment insights.
+IntelliVest is a comprehensive stock analysis platform featuring a Python backend for technical analysis and a beautiful Streamlit web interface. The system combines data engineering, technical analysis, and quantitative backtesting to provide data-driven investment insights through an intuitive web application.
 
 ## 🚀 Features
 
-- **Automated Data Pipeline**: ETL process for downloading and storing stock data from Yahoo Finance
-- **Technical Analysis Engine**: Calculates RSI, SMAs, MACD, and other technical indicators
-- **Intelligent Scoring System**: Rules-based scoring algorithm (0-100) for stock evaluation
-- **Strategy Backtesting**: Historical performance simulation with buy/sell signals
-- **Performance Visualization**: Interactive charts comparing strategy vs. buy-and-hold performance
-- **PostgreSQL Integration**: Robust data storage with efficient bulk operations
+## 🚀 Quick Start
+
+### Option 1: Use the Live Web App (Recommended)
+Your IntelliVest app is already deployed and working! Simply visit your Streamlit Cloud URL to start analyzing stocks.
+
+### Option 2: Run Locally
+If you want to run the app locally or modify it:
+
+- **🌐 Web Application**: Beautiful Streamlit interface accessible from anywhere
+- **📊 Interactive Charts**: Candlestick charts with moving averages and technical indicators
+- **🤖 AI-Powered Recommendations**: Intelligent scoring system (0-100) with buy/sell/hold signals
+- **📈 Technical Analysis**: RSI, SMAs, MACD, and other professional indicators
+- **🗄️ Cloud Database**: Supabase PostgreSQL with connection pooling for reliability
+- **📱 Responsive Design**: Works perfectly on desktop, tablet, and mobile devices
 
 ## 📁 Project Structure
 
 ```
 IntelliVest/
+├── app.py                   # 🚀 Main Streamlit web application
 ├── requirements.txt          # Python dependencies
+├── .streamlit/              # Streamlit configuration
+│   └── secrets.toml         # Database credentials (not in git)
 ├── env_example.txt          # Environment variables template
 ├── etl_script.py            # Data extraction, transformation, and loading
 ├── analysis_engine.py       # Technical analysis and scoring engine
 ├── backtester.py            # Strategy backtesting and performance evaluation
+├── main.py                  # Command-line interface
+├── config.py                # Configuration management
 └── README.md                # Project documentation
 ```
 
@@ -74,11 +87,28 @@ IntelliVest/
    GRANT ALL PRIVILEGES ON DATABASE intellivest TO your_username;
    ```
 
-## 📊 Usage
+## 🌐 Web Application
+
+### Live Demo
+
+Your IntelliVest app is now live and accessible from anywhere! Simply:
+
+1. **Enter a stock ticker** (e.g., AAPL, MSFT, GOOGL, TSLA)
+2. **Click "🚀 Analyze Stock"**
+3. **View interactive charts** and technical analysis
+4. **Get AI-powered recommendations** with scoring
+
+### Features
+
+- **📊 Price Charts**: Candlestick charts with 50 & 200-day moving averages
+- **📈 Technical Indicators**: RSI, MACD, and moving average analysis
+- **🎯 Smart Recommendations**: Buy/Sell/Hold signals based on technical scoring
+- **📋 Data Tables**: Recent technical indicator values
+- **📱 Responsive Design**: Works perfectly on all devices
+
+## 📊 Backend Usage
 
 ### 1. Data Pipeline (ETL)
-
-Run the ETL script to download and store stock data:
 
 ```bash
 python etl_script.py

@@ -13,7 +13,6 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import plotly.express as px
 from datetime import datetime, timedelta
-import os
 
 # Import IntelliVest functions
 from analysis_engine import (
@@ -100,21 +99,13 @@ def fetch_stock_data(ticker: str, days: int = 365) -> pd.DataFrame:
         pd.DataFrame: DataFrame with stock data or empty DataFrame if error
     """
     try:
-        # Add connection debugging
-        st.info("🔍 Attempting database connection...")
-        
         connection = get_database_connection()
         if connection is None:
-            st.error("❌ Database connection failed")
             return pd.DataFrame()
-        
-        st.success("✅ Database connected successfully!")
         
         # Calculate date range
         end_date = datetime.now().date()
         start_date = end_date - timedelta(days=days)
-        
-        st.info(f"📊 Querying data for {ticker.upper()} from {start_date} to {end_date}")
         
         query = """
         SELECT ticker, date, open, high, low, close, volume
@@ -135,8 +126,6 @@ def fetch_stock_data(ticker: str, days: int = 365) -> pd.DataFrame:
             st.warning(f"No data found for ticker {ticker.upper()}")
             return pd.DataFrame()
         
-        st.success(f"✅ Found {len(df)} records for {ticker.upper()}")
-        
         # Convert date column to datetime
         df['date'] = pd.to_datetime(df['date'])
         
@@ -144,7 +133,6 @@ def fetch_stock_data(ticker: str, days: int = 365) -> pd.DataFrame:
         
     except Exception as e:
         st.error(f"Error fetching data: {e}")
-        st.error(f"Error type: {type(e).__name__}")
         return pd.DataFrame()
 
 def create_candlestick_chart(df: pd.DataFrame, ticker: str) -> go.Figure:
