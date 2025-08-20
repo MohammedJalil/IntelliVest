@@ -7,7 +7,6 @@ for time series analysis and prediction.
 """
 
 import pandas as pd
-import numpy as np
 from prophet import Prophet
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
@@ -25,169 +24,82 @@ logger = logging.getLogger(__name__)
 class StockForecaster:
     """
     A class for forecasting stock prices using Facebook Prophet.
-    
-    Prophet is excellent for time series forecasting because it:
-    - Handles missing data gracefully
-    - Automatically detects seasonality
-    - Provides uncertainty intervals
-    - Is robust to outliers
     """
-    
     def __init__(self, confidence_interval: float = 0.95):
-        """
-        Initialize the forecaster.
-        
-        Args:
-            confidence_interval (float): Confidence interval for predictions (0.95 = 95%)
-        """
         self.confidence_interval = confidence_interval
         self.model = None
         self.forecast = None
         self.forecast_dates = None
-        
+
     def prepare_data_for_prophet(self, df: pd.DataFrame) -> pd.DataFrame:
-        """
-        Prepare stock data for Prophet model.
-        
-        Prophet requires columns named 'ds' (date) and 'y' (value).
-        
-        Args:
-            df (pd.DataFrame): DataFrame with 'date' and 'close' columns
-            
-        Returns:
-            pd.DataFrame: DataFrame formatted for Prophet
-        """
         try:
-            # Create a copy to avoid modifying original data
             prophet_df = df[['date', 'close']].copy()
-            
-            # Rename columns for Prophet
             prophet_df.columns = ['ds', 'y']
-            
-            # Ensure date is datetime
             prophet_df['ds'] = pd.to_datetime(prophet_df['ds'])
-            
-            # Remove any rows with missing values
             prophet_df = prophet_df.dropna()
-            
-            # Sort by date
-            prophet_df = prophet_df.sort_values('ds')
-            
+            prophet_df = prophet_df.sort_values(by='ds', ascending=True)
             logger.info(f"Prepared {len(prophet_df)} data points for Prophet")
             return prophet_df
-            
         except Exception as e:
             logger.error(f"Error preparing data for Prophet: {e}")
             raise
-    
-    def train_model(self, df: pd.DataFrame, 
-                   changepoint_prior_scale: float = 0.05,
-                   seasonality_prior_scale: float = 10.0,
-                   holidays_prior_scale: float = 10.0,
-                   seasonality_mode: str = 'additive') -> bool:
-        """
-        Train the Prophet model on historical stock data.
-        
-        Args:
-            df (pd.DataFrame): Historical stock data
-            changepoint_prior_scale (float): Flexibility of the trend (higher = more flexible)
-            seasonality_prior_scale (float): Flexibility of the seasonality
-            holidays_prior_scale (float): Flexibility of the holiday effects
-            seasonality_mode (str): 'additive' or 'multiplicative'
-            
-        Returns:
-            bool: True if training successful, False otherwise
-        """
+
+    def train_model(self, df: pd.DataFrame, changepoint_prior_scale: float = 0.05,
+                    seasonality_prior_scale: float = 10.0,
+                    holidays_prior_scale: float = 10.0,
+                    seasonality_mode: str = 'additive') -> bool:
         try:
-            # Prepare data
             prophet_df = self.prepare_data_for_prophet(df)
-            
             if len(prophet_df) < 30:
                 logger.warning("Insufficient data for reliable forecasting (need at least 30 data points)")
                 return False
-            
-            # Initialize Prophet model with custom parameters
             self.model = Prophet(
                 changepoint_prior_scale=changepoint_prior_scale,
                 seasonality_prior_scale=seasonality_prior_scale,
                 holidays_prior_scale=holidays_prior_scale,
                 seasonality_mode=seasonality_mode,
                 interval_width=self.confidence_interval,
-                daily_seasonality=False,  # Disable for daily stock data
-                weekly_seasonality=True,  # Enable weekly patterns
-                yearly_seasonality=True   # Enable yearly patterns
+                daily_seasonality='auto',
+                weekly_seasonality='auto',
+                yearly_seasonality='auto'
             )
-            
-            # Add custom seasonality for stock market patterns
             self.model.add_seasonality(
-                name='monthly', 
-                period=30.5, 
+                name='monthly',
+                period=30.5,
                 fourier_order=5
             )
-            
-            # Add quarterly seasonality (earnings seasons)
             self.model.add_seasonality(
-                name='quarterly', 
-                period=91.25, 
+                name='quarterly',
+                period=91.25,
                 fourier_order=8
             )
-            
-            # Fit the model
             logger.info("Training Prophet model...")
             self.model.fit(prophet_df)
             logger.info("Prophet model training completed successfully")
-            
             return True
-            
         except Exception as e:
             logger.error(f"Error training Prophet model: {e}")
             return False
-    
+
     def generate_forecast(self, periods: int = 30) -> pd.DataFrame:
-        """
-        Generate price forecast for the specified number of periods.
-        
-        Args:
-            periods (int): Number of days to forecast
-            
-        Returns:
-            pd.DataFrame: Forecast data with predictions and confidence intervals
-        """
         if self.model is None:
             raise ValueError("Model must be trained before generating forecast")
-        
         try:
-            # Create future dataframe
             future = self.model.make_future_dataframe(periods=periods)
-            
-            # Generate forecast
             logger.info(f"Generating {periods}-day forecast...")
             self.forecast = self.model.predict(future)
-            
-            # Store forecast dates for easy access
             self.forecast_dates = self.forecast['ds'].tail(periods)
-            
             logger.info("Forecast generated successfully")
             return self.forecast
-            
         except Exception as e:
             logger.error(f"Error generating forecast: {e}")
             raise
-    
+
     def get_forecast_summary(self) -> Dict[str, Any]:
-        """
-        Get a summary of the forecast results.
-        
-        Returns:
-            Dict[str, Any]: Summary statistics and predictions
-        """
         if self.forecast is None:
             raise ValueError("No forecast available. Generate forecast first.")
-        
         try:
-            # Get the last few predictions
             recent_forecast = self.forecast.tail(7)
-            
             summary = {
                 'next_7_days': {
                     'dates': recent_forecast['ds'].dt.strftime('%Y-%m-%d').tolist(),
@@ -199,77 +111,82 @@ class StockForecaster:
                 'trend_direction': self._get_trend_direction(),
                 'volatility_estimate': self._get_volatility_estimate()
             }
-            
             return summary
-            
         except Exception as e:
             logger.error(f"Error getting forecast summary: {e}")
             raise
-    
+
     def _get_trend_direction(self) -> str:
-        """Determine the overall trend direction of the forecast."""
         if self.forecast is None:
             return "Unknown"
-        
         try:
-            # Compare start and end of forecast period
-            start_price = self.forecast['yhat'].iloc[-30]  # 30 days ago
-            end_price = self.forecast['yhat'].iloc[-1]     # Latest prediction
-            
+            forecast_df = self.forecast
+            if forecast_df is None or len(forecast_df) < 30:
+                return "Insufficient Data"
+            start_price = float(forecast_df['yhat'].iloc[-30])
+            end_price = float(forecast_df['yhat'].iloc[-1])
             change_pct = ((end_price - start_price) / start_price) * 100
-            
             if change_pct > 2:
                 return "Bullish (↗️)"
             elif change_pct < -2:
                 return "Bearish (↘️)"
             else:
                 return "Sideways (→)"
-                
-        except Exception:
+        except Exception as e:
+            logger.warning(f"Error calculating trend direction: {e}")
             return "Unknown"
-    
+
     def _get_volatility_estimate(self) -> str:
-        """Estimate volatility based on confidence intervals."""
         if self.forecast is None:
             return "Unknown"
-        
         try:
-            # Calculate average width of confidence intervals
-            recent_forecast = self.forecast.tail(7)
-            avg_interval_width = (
-                (recent_forecast['yhat_upper'] - recent_forecast['yhat_lower']) / 
-                recent_forecast['yhat']
-            ).mean() * 100
-            
+            forecast_df = self.forecast
+            if forecast_df is None or len(forecast_df) < 7:
+                return "Insufficient Data"
+            recent_forecast = forecast_df.tail(7)
+            yhat_values = recent_forecast['yhat'].astype(float)
+            upper_values = recent_forecast['yhat_upper'].astype(float)
+            lower_values = recent_forecast['yhat_lower'].astype(float)
+            valid_indices = yhat_values != 0
+            if not valid_indices.any():
+                return "Unknown"
+            avg_interval_width = ((upper_values[valid_indices] - lower_values[valid_indices]) / yhat_values[valid_indices]).mean() * 100
             if avg_interval_width > 5:
                 return "High Volatility"
             elif avg_interval_width > 2:
                 return "Medium Volatility"
             else:
                 return "Low Volatility"
-                
-        except Exception:
+        except Exception as e:
+            logger.warning(f"Error calculating volatility estimate: {e}")
             return "Unknown"
-    
-    def create_forecast_chart(self, historical_df: pd.DataFrame, 
-                             ticker: str, 
-                             forecast_days: int = 30) -> go.Figure:
-        """
-        Create a comprehensive forecast chart showing historical data and predictions.
-        
-        Args:
-            historical_df (pd.DataFrame): Historical stock data
-            ticker (str): Stock ticker symbol
-            forecast_days (int): Number of days to forecast
-            
-        Returns:
-            go.Figure: Plotly figure with historical data and forecast
-        """
+
+    def create_forecast_chart(self, historical_df: pd.DataFrame, ticker: str, forecast_days: int = 30) -> go.Figure:
         try:
             if self.forecast is None:
                 raise ValueError("No forecast available. Generate forecast first.")
-            
-            # Create subplots
+
+            # Ensure correct types with coercion to handle invalid data
+            historical_df['date'] = pd.to_datetime(historical_df['date'], errors='coerce')
+            historical_df['close'] = pd.to_numeric(historical_df['close'], errors='coerce')
+            historical_df['volume'] = pd.to_numeric(historical_df['volume'], errors='coerce')
+            self.forecast['ds'] = pd.to_datetime(self.forecast['ds'], errors='coerce')
+            self.forecast['yhat'] = pd.to_numeric(self.forecast['yhat'], errors='coerce')
+
+            # Format hover texts
+            def safe_hist_hover(row):
+                return f"<b>Date</b>: {row['date'].strftime('%Y-%m-%d')}<br><b>Close</b>: ${row['close']:.2f}"
+
+            def safe_forecast_hover(row):
+                return f"<b>Date</b>: {row['ds'].strftime('%Y-%m-%d')}<br><b>Forecast</b>: ${row['yhat']:.2f}"
+
+            def safe_vol_hover(row):
+                return f"<b>Date</b>: {row['date'].strftime('%Y-%m-%d')}<br><b>Volume</b>: {int(row['volume']):,}"
+
+            historical_df['hover_text'] = historical_df.apply(safe_hist_hover, axis=1)
+            self.forecast['hover_text'] = self.forecast.apply(safe_forecast_hover, axis=1)
+            historical_df['volume_hover_text'] = historical_df.apply(safe_vol_hover, axis=1)
+
             fig = make_subplots(
                 rows=2, cols=1,
                 shared_xaxes=True,
@@ -277,8 +194,7 @@ class StockForecaster:
                 subplot_titles=(f'{ticker.upper()} Price Forecast', 'Volume'),
                 row_heights=[0.7, 0.3]
             )
-            
-            # Historical data
+
             fig.add_trace(
                 go.Scatter(
                     x=historical_df['date'],
@@ -286,12 +202,11 @@ class StockForecaster:
                     mode='lines',
                     name='Historical Close',
                     line=dict(color='#1f77b4', width=2),
-                    hovertemplate='<b>%{x}</b><br>Close: $%{y:.2f}<extra></extra>'
+                    hovertext=historical_df['hover_text'],
+                    hoverinfo='text'
                 ),
                 row=1, col=1
             )
-            
-            # Forecast line
             fig.add_trace(
                 go.Scatter(
                     x=self.forecast['ds'],
@@ -299,37 +214,50 @@ class StockForecaster:
                     mode='lines',
                     name='Forecast',
                     line=dict(color='#ff7f0e', width=3, dash='dash'),
-                    hovertemplate='<b>%{x}</b><br>Forecast: $%{y:.2f}<extra></extra>'
+                    hovertext=self.forecast['hover_text'],
+                    hoverinfo='text'
                 ),
                 row=1, col=1
             )
-            
-            # Confidence interval
             fig.add_trace(
                 go.Scatter(
-                    x=self.forecast['ds'].tolist() + self.forecast['ds'].tolist()[::-1],
-                    y=self.forecast['yhat_upper'].tolist() + self.forecast['yhat_lower'].tolist()[::-1],
-                    fill='toself',
-                    fillcolor='rgba(255, 127, 14, 0.2)',
-                    line=dict(color='rgba(255, 127, 14, 0)'),
-                    name=f'{self.confidence_interval * 100}% Confidence Interval',
-                    showlegend=True,
-                    hovertemplate='<b>%{x}</b><br>Upper: $%{y:.2f}<extra></extra>'
+                    x=self.forecast['ds'],
+                    y=self.forecast['yhat_upper'],
+                    mode='lines',
+                    line=dict(width=0),
+                    showlegend=False,
+                    hoverinfo='skip'
                 ),
                 row=1, col=1
             )
-            
-            # Add vertical line to separate historical from forecast
+            fig.add_trace(
+                go.Scatter(
+                    x=self.forecast['ds'],
+                    y=self.forecast['yhat_lower'],
+                    mode='lines',
+                    line=dict(width=0),
+                    fill='tonexty',
+                    fillcolor='rgba(255, 127, 14, 0.2)',
+                    name=f'{self.confidence_interval * 100}% Confidence Interval',
+                    showlegend=True,
+                    hoverinfo='skip'
+                ),
+                row=1, col=1
+            )
+
             last_historical_date = historical_df['date'].max()
             fig.add_vline(
                 x=last_historical_date,
                 line_dash="dash",
-                line_color="red",
-                annotation_text="Forecast Start",
-                annotation_position="top right"
+                line_color="red"
             )
-            
-            # Volume chart (historical only)
+            fig.add_annotation(
+                x=last_historical_date,
+                y=historical_df['close'].max(),
+                text="Forecast Start",
+                showarrow=True,
+                arrowhead=1
+            )
             fig.add_trace(
                 go.Bar(
                     x=historical_df['date'],
@@ -337,12 +265,11 @@ class StockForecaster:
                     name='Volume',
                     marker_color='lightblue',
                     opacity=0.7,
-                    hovertemplate='<b>%{x}</b><br>Volume: %{y:,}<extra></extra>'
+                    hovertext=historical_df['volume_hover_text'],
+                    hoverinfo='text'
                 ),
                 row=2, col=1
             )
-            
-            # Update layout
             fig.update_layout(
                 title=f'{ticker.upper()} Stock Price Forecast ({forecast_days} Days)',
                 xaxis_rangeslider_visible=False,
@@ -350,35 +277,21 @@ class StockForecaster:
                 showlegend=True,
                 hovermode='x unified'
             )
-            
-            # Update axes labels
             fig.update_xaxes(title_text="Date", row=2, col=1)
             fig.update_yaxes(title_text="Price ($)", row=1, col=1)
             fig.update_yaxes(title_text="Volume", row=2, col=1)
-            
+
             return fig
-            
+
         except Exception as e:
             logger.error(f"Error creating forecast chart: {e}")
             raise
-    
+
     def get_model_insights(self) -> Dict[str, Any]:
-        """
-        Get insights about the trained model.
-        
-        Returns:
-            Dict[str, Any]: Model insights and diagnostics
-        """
         if self.model is None:
             raise ValueError("Model not trained yet.")
-        
         try:
-            # Get model components
-            components = self.model.plot_components(self.forecast)
-            
             insights = {
-                'trend_strength': self._analyze_trend_strength(),
-                'seasonality_detected': self._check_seasonality(),
                 'changepoints': len(self.model.changepoints) if hasattr(self.model, 'changepoints') else 0,
                 'model_parameters': {
                     'changepoint_prior_scale': self.model.changepoint_prior_scale,
@@ -386,50 +299,26 @@ class StockForecaster:
                     'holidays_prior_scale': self.model.holidays_prior_scale
                 }
             }
-            
             return insights
-            
         except Exception as e:
             logger.error(f"Error getting model insights: {e}")
             return {}
 
-def forecast_stock_price(df: pd.DataFrame, 
-                        ticker: str, 
-                        forecast_days: int = 30,
-                        confidence_interval: float = 0.95) -> Tuple[StockForecaster, go.Figure]:
-    """
-    Convenience function to forecast stock prices.
-    
-    Args:
-        df (pd.DataFrame): Historical stock data
-        ticker (str): Stock ticker symbol
-        forecast_days (int): Number of days to forecast
-        confidence_interval (float): Confidence interval for predictions
-        
-    Returns:
-        Tuple[StockForecaster, go.Figure]: Forecaster object and forecast chart
-    """
+def forecast_stock_price(df: pd.DataFrame,
+                         ticker: str,
+                         forecast_days: int = 30,
+                         confidence_interval: float = 0.95) -> Tuple[StockForecaster, go.Figure]:
     try:
-        # Initialize forecaster
         forecaster = StockForecaster(confidence_interval=confidence_interval)
-        
-        # Train model
         if not forecaster.train_model(df):
             raise ValueError("Failed to train forecasting model")
-        
-        # Generate forecast
         forecaster.generate_forecast(periods=forecast_days)
-        
-        # Create chart
         chart = forecaster.create_forecast_chart(df, ticker, forecast_days)
-        
         return forecaster, chart
-        
     except Exception as e:
         logger.error(f"Error in forecast_stock_price: {e}")
         raise
 
 if __name__ == "__main__":
-    # Example usage
     print("StockForecaster module loaded successfully!")
     print("Use forecast_stock_price() function for quick forecasting.")
